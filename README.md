@@ -62,7 +62,7 @@ flowchart TD
     A["Identify a vehicle"] --> B["Submit a report"]
     B --> C["Validate and save report"]
     C --> D["Associate report with vehicle"]
-    D --> E["Make report available in owner alerts"]
+    D --> E["Show report in owner alerts"]
     E --> F["Owner reviews report"]
     F --> G{"Owner response"}
     G --> H["Dispute"]
@@ -73,39 +73,18 @@ flowchart TD
     J --> K
 ```
 
-The diagram describes the intended report lifecycle. The availability of each action depends on the current implementation and configuration.
 
 ## System architecture
 
-The application separates the user interface, backend logic, and database responsibilities.
-
 ```mermaid
-flowchart TB
-    U["User"]
-    subgraph Frontend["Frontend — React and TypeScript"]
-        UI["Application screens"]
-        STATE["Shared application state"]
-        UI <--> STATE
-    end
-
-    subgraph Backend["Backend — Node.js and Express"]
-        API["HTTP API"]
-        AUTH["Authentication and access checks"]
-        LOGIC["Report and vehicle logic"]
-        API --> AUTH
-        AUTH --> LOGIC
-    end
-
-    subgraph Database["Data layer"]
-        PG[("PostgreSQL on Supabase")]
-        SCHEMA["Database schema"]
-        PG --- SCHEMA
-    end
-
-    U --> UI
-    STATE <-->|"API requests and responses"| API
-    LOGIC <-->|"Database queries"| PG
+flowchart TD
+    U[User] --> FE[React and TypeScript frontend]
+    FE --> API[Express API]
+    API --> AUTH[Authentication and access checks]
+    AUTH --> LOGIC[Report and vehicle logic]
+    LOGIC --> DB[(PostgreSQL on Supabase)]
 ```
+
 
 **Architecture notes**
 
