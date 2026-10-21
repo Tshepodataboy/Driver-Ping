@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #111827;
+    background-color: #8C1226;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Custom crimson immersion background */
+.bg-crimson-gradient {
+  background: radial-gradient(circle at 50% 20%, #B81D39 0%, #941329 55%, #6B0C1D 100%);
+}
+
+.crimson-card-shadow {
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.45), 0 8px 24px -4px rgba(0, 0, 0, 0.25);
+}
+
+.crimson-soft-glow {
+  box-shadow: 0 10px 30px rgba(184, 29, 57, 0.4);
+}
+
+
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* ---------- Layout ---------- */
+.wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  outline: none;
+}
+
+/* both items sit in the same grid cell, so one replaces the other */
+.stage {
+  display: grid;
+  place-items: center;
+}
+
+.go-wrap,
+.socials {
+  grid-area: 1 / 1;
+}
+
+/* isolation keeps the ring's z-index:-1 behind the button, not the page */
+.go-wrap {
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem; /* room for the outer ring */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ---------- Button 1 (GO) ---------- */
+.btn {
+  position: relative;
+  background: linear-gradient(#ffffff 30%, #ffffff 30%, #d6d6d6);
+  width: 8rem;
+  height: 8rem;
+  border-radius: 10rem;
+  border: 0.15rem solid #ffffff;
+  transition: 0.3s;
+  box-shadow: 0 0.3rem 0.3rem rgb(18 18 18 / 35%);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #4b5563;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn::before {
+  content: "";
+  width: 125%;
+  height: 125%;
+  background: rgb(224, 224, 224);
+  box-shadow: 0 0.2rem 0.2rem inset #808080;
+  position: absolute;
+  left: -12%;
+  top: -12%;
+  z-index: -1;
+  border-radius: inherit;
+  transition: 0.3s;
+}
+
+/* pressed: red flash for 0.5s */
+.wrapper:focus-within .btn {
+  box-shadow:
+    0 5px 3px rgb(18 18 18 / 35%),
+    0 5px 25px rgba(2, 220, 89, 0.777);
+  background: linear-gradient(0deg, #ffffff 30%, #ffffff 30%, #d6d6d6);
+  animation: flash-glow 0.5s linear;
+}
+
+.wrapper:focus-within .btn::before {
+  animation: flash-ring 0.5s linear;
+}
+
+@keyframes flash-glow {
+  0%, 99% {
+    box-shadow:
+      0 5px 3px rgb(18 18 18 / 35%),
+      0 5px 25px rgba(255, 30, 30, 0.9);
+  }
+}
+
+@keyframes flash-ring {
+  0%, 99% {
+    background: rgb(255, 170, 170);
+    box-shadow: 0 0.2rem 0.2rem inset #ff1e1e;
+  }
+}
+
+/* after the flash, GO shrinks and fades out (the grid takes its place) */
+.wrapper:focus-within .go-wrap {
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+  transition: opacity 0.25s ease 0.5s, transform 0.25s ease 0.5s;
+}
+
+/* ---------- Button 2 (social grid) ---------- */
+.main {
+  position: relative;
+  isolation: isolate; /* keeps the ring behind the cards, not the page */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+/* recessed ring, same material as the GO button's ring */
+.main::before {
+  content: "";
+  position: absolute;
+  inset: -0.9rem;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(224, 224, 224);
+  box-shadow: 0 0.2rem 0.2rem inset #808080;
+}
+
+.up,
+.down {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+}
+
+/* hidden by default */
+.socials {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.5);
+  transform-origin: center;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+
+/* pops in right after the red flash */
+.wrapper:focus-within .socials {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
+  transition:
+    opacity 0.35s ease 0.5s,
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s,
+    visibility 0s linear 0.5s;
+}
+
+/* cards share the GO button's texture */
+.card1, .card2, .card3, .card4 {
+  width: 90px;
+  height: 90px;
+  outline: none;
+  background: linear-gradient(#ffffff 30%, #d6d6d6);
+  border: 0.15rem solid #ffffff;
+  box-shadow: 0 0.3rem 0.3rem rgb(18 18 18 / 35%);
+  transition: 0.2s ease-in-out;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.card1 { border-radius: 90px 5px 5px 5px; }
+.card2 { border-radius: 5px 90px 5px 5px; }
+.card3 { border-radius: 5px 5px 5px 90px; }
+.card4 { border-radius: 5px 5px 90px 5px; }
+
+/* Balanced optical centering within each curved quadrant */
+.icon-quadrant-vehicle {
+  transform: translate(8px, 8px);
+  color: #941329;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-quadrant-driver {
+  transform: translate(-8px, 8px);
+  color: #1e40af;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-quadrant-road {
+  transform: translate(8px, -8px);
+  color: #d97706;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-quadrant-emergency {
+  transform: translate(-8px, -8px);
+  color: #dc2626;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+/* hover & active-hover: keep glossy gradient tinted with category / emergency color and scale to 1.1 */
+.card1:hover, .card1.active-hover,
+.card2:hover, .card2.active-hover,
+.card3:hover, .card3.active-hover,
+.card4:hover, .card4.active-hover {
+  scale: 1.1 !important;
+  z-index: 10;
+  box-shadow: 0 0.45rem 0.8rem rgb(18 18 18 / 35%) !important;
+}
+
+.card1:hover, .card1.active-hover { background: linear-gradient(color-mix(in srgb, #941329 80%, white) 30%, #941329) !important; }
+.card2:hover, .card2.active-hover { background: linear-gradient(color-mix(in srgb, #1e40af 80%, white) 30%, #1e40af) !important; }
+.card3:hover, .card3.active-hover { background: linear-gradient(color-mix(in srgb, #d97706 80%, white) 30%, #d97706) !important; }
+.card4:hover, .card4.active-hover { background: linear-gradient(color-mix(in srgb, #dc2626 80%, white) 30%, #dc2626) !important; }
+
+.card1:hover .icon-quadrant-vehicle, .card1.active-hover .icon-quadrant-vehicle,
+.card2:hover .icon-quadrant-driver, .card2.active-hover .icon-quadrant-driver,
+.card3:hover .icon-quadrant-road, .card3.active-hover .icon-quadrant-road,
+.card4:hover .icon-quadrant-emergency, .card4.active-hover .icon-quadrant-emergency {
+  color: #ffffff !important;
+}
+
+/* pressed-in feel when not in half-second active-hover hold */
+.card1:active:not(.active-hover),
+.card2:active:not(.active-hover),
+.card3:active:not(.active-hover),
+.card4:active:not(.active-hover) {
+  scale: 1.04;
+  box-shadow: 0 0.1rem 0.1rem rgb(18 18 18 / 35%);
+}
