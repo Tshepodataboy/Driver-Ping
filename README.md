@@ -110,15 +110,6 @@ The repository contains the following application areas. Their presence in the c
 | Backend API | Process application requests | Run API and integration tests |
 | PostgreSQL schema | Define persistent application data | Verify migrations, constraints, and live connection |
 
-### What is not assumed to be live
-
-The following should not be presented as production capabilities unless they have been implemented and tested:
-
-- Real SMS delivery or phone verification
-- Production-grade owner identity verification
-- Payments and subscription billing
-- Official vehicle registry integration
-- Emergency dispatch or guaranteed real-time notifications
 
 ## Technology stack
 
