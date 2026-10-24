@@ -182,18 +182,23 @@ export function VehiclesScreen() {
               className="bg-white rounded-2xl p-4 border border-gray-100 shadow-xs space-y-3"
             >
               {/* Header */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="w-28 mb-1.5 shadow-2xs">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <div className="w-36 max-w-full drop-shadow-xs">
                     <ProvincialPlate
                       provinceCode={detectProvinceFromPlate(veh.plateDisplay)}
                       plateText={veh.plateDisplay}
                     />
                   </div>
-                  <h2 className="text-sm font-bold text-gray-900 mt-1">
-                    {veh.make} {veh.model}
-                  </h2>
-                  <span className="text-xs text-gray-400">{veh.color}</span>
+                  <div>
+                    <div className="font-mono font-black text-xs text-gray-950">
+                      {veh.plateDisplay}
+                    </div>
+                    <h2 className="text-xs font-bold text-gray-800">
+                      {veh.make} {veh.model}
+                    </h2>
+                    <span className="text-[11px] text-gray-400">{veh.color}</span>
+                  </div>
                 </div>
 
                 <div className="text-right">
@@ -445,7 +450,7 @@ export function VehiclesScreen() {
                     )}
                   </div>
                 ) : (
-                  <div className="p-2.5 bg-red-50/70 border border-red-100 rounded-xl flex items-center justify-between mb-2">
+                  <div className="p-2.5 bg-red-50/70 border border-red-100 rounded-xl flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="w-6 h-6 rounded-md bg-[#B81D39] text-white font-mono font-bold text-[10px] flex items-center justify-center">
                         {provinceCode}
@@ -454,9 +459,9 @@ export function VehiclesScreen() {
                         {SA_PROVINCES.find((p) => p.code === provinceCode)?.name || 'Selected'} ({provinceCode})
                       </span>
                     </div>
-                    <span className="text-[10px] text-gray-400">
-                      Type above to change
-                    </span>
+                    <div className="w-24 shrink-0 text-right">
+                      <ProvincialPlate provinceCode={provinceCode} className="w-full drop-shadow-xs" />
+                    </div>
                   </div>
                 )}
               </div>

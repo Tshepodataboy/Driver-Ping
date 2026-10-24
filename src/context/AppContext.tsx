@@ -8,7 +8,7 @@ import {
   AuditLogItem,
 } from '../types/index.js';
 
-export type TabKey = 'home' | 'vehicles' | 'report' | 'alerts' | 'profile' | 'admin' | 'settings';
+export type TabKey = 'home' | 'vehicles' | 'report' | 'alerts' | 'profile' | 'admin' | 'settings' | 'landing';
 
 interface DemoAccount {
   id: string;
@@ -34,6 +34,8 @@ interface AppContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   
   // Auth methods
+  loginAsDemo: (userId?: string) => Promise<void>;
+  loginWithEmail: (email: string, fullNameOrUserId?: string, mode?: 'signin' | 'signup') => Promise<{ success: boolean; isNew?: boolean; user?: User; error?: string }>;
   requestOtp: (phone: string) => Promise<{ success: boolean; message: string; debugCode?: string; error?: string }>;
   verifyOtp: (phone: string, code: string, fullName?: string) => Promise<{ success: boolean; error?: string }>;
   switchAccount: (userId: string) => Promise<void>;
@@ -43,6 +45,7 @@ interface AppContextType {
     smsMonthlyCapPence?: number;
     plan?: 'free' | 'paid_owner';
     fullName?: string;
+    phone?: string;
     defaultPlate?: string;
     defaultProvinceCode?: string;
   }) => Promise<{ success: boolean; error?: string }>;
@@ -140,63 +143,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     let token = authToken;
 
-    // If no token stored yet, initialize demo session as Alex Morgan
+    // If no token stored yet, auto-login as demo user so app is immediately usable
     if (!token) {
-      try {
-        const demoRes = await fetch('/api/auth/demo-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: 'usr_alex_001' }),
-        });
-        if (demoRes.ok) {
-          const demoData = await demoRes.json();
-          token = demoData.token;
-          setAuthToken(demoData.token);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('driver_ping_token', demoData.token);
-          }
-          setUser(demoData.user);
-          setCurrentUserId(demoData.user.id);
-          await loadUserData(demoData.token);
-          return;
-        }
-      } catch (err) {
-        console.error('Failed to initialize demo session', err);
-      }
-    } else {
-      // Validate existing token
-      try {
-        const meRes = await fetch('/api/auth/me', { headers: getHeaders(token) });
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          setUser(meData.user);
-          setCurrentUserId(meData.user.id);
-          await loadUserData(token);
-          return;
-        } else {
-          // Token expired or invalid, reset to demo account
-          const demoRes = await fetch('/api/auth/demo-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: 'usr_alex_001' }),
-          });
-          if (demoRes.ok) {
-            const demoData = await demoRes.json();
-            setAuthToken(demoData.token);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('driver_ping_token', demoData.token);
-            }
-            setUser(demoData.user);
-            setCurrentUserId(demoData.user.id);
-            await loadUserData(demoData.token);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error('Error validating session', err);
-      }
+      await loginAsDemo('usr_alex_001');
+      return;
     }
-    setIsLoading(false);
+
+    // Validate existing token
+    try {
+      const meRes = await fetch('/api/auth/me', { headers: getHeaders(token) });
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setUser(meData.user);
+        setCurrentUserId(meData.user.id);
+        await loadUserData(token);
+      } else {
+        // Token expired or invalid, reset session
+        setAuthToken(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('driver_ping_token');
+        }
+        setUser(null);
+        setCurrentUserId('');
+      }
+    } catch (err) {
+      console.error('Error validating session', err);
+      setUser(null);
+      setCurrentUserId('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginAsDemo = async (userId: string = 'usr_alex_001') => {
+    setIsLoading(true);
+    try {
+      const demoRes = await fetch('/api/auth/demo-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (demoRes.ok) {
+        const demoData = await demoRes.json();
+        setAuthToken(demoData.token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('driver_ping_token', demoData.token);
+        }
+        setUser(demoData.user);
+        setCurrentUserId(demoData.user.id);
+        await loadUserData(demoData.token);
+      }
+    } catch (err) {
+      console.error('Failed to log in as demo', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchDemoAccounts = async () => {
@@ -287,6 +288,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Auth
+  const loginWithEmail = async (
+    email: string,
+    fullNameOrUserId?: string,
+    mode: 'signin' | 'signup' = 'signin'
+  ) => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/auth/email-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          fullName: mode === 'signup' ? fullNameOrUserId : undefined,
+          userId: mode === 'signin' ? fullNameOrUserId : undefined,
+          mode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { success: false, error: data.error || 'Failed to sign in' };
+
+      setAuthToken(data.token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('driver_ping_token', data.token);
+      }
+      setCurrentUserId(data.user.id);
+      setUser(data.user);
+      // For sign in, close modal; for signup caller can handle post-registration step
+      if (mode === 'signin' || !data.isNew) {
+        setIsAuthModalOpen(false);
+      }
+      await loadUserData(data.token);
+      fetchDemoAccounts();
+      return { success: true, isNew: data.isNew, user: data.user };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network error' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const requestOtp = async (phone: string) => {
     try {
       const res = await fetch('/api/auth/request-otp', {
@@ -368,6 +409,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     smsMonthlyCapPence?: number;
     plan?: 'free' | 'paid_owner';
     fullName?: string;
+    phone?: string;
     defaultPlate?: string;
     defaultProvinceCode?: string;
   }) => {
@@ -656,6 +698,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         demoAccounts,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        loginAsDemo,
+        loginWithEmail,
         requestOtp,
         verifyOtp,
         switchAccount,

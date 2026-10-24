@@ -7,29 +7,29 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. USERS TABLE
--- Tracks road users with phone-based authentication, subscription tier, and SMS settings
+-- Tracks road users with phone or email-based authentication, subscription tier, and SMS settings
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    phone VARCHAR(20) NOT NULL UNIQUE,
-    full_name VARCHAR(100),
+    phone VARCHAR(255) NOT NULL UNIQUE,
+    full_name VARCHAR(255),
     role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     plan VARCHAR(20) NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'paid_owner')),
     sms_opt_in BOOLEAN NOT NULL DEFAULT false,
     sms_monthly_cap_pence INTEGER NOT NULL DEFAULT 500, -- £5.00 / R50.00 default cap
     sms_current_spend_pence INTEGER NOT NULL DEFAULT 0,
-    default_plate VARCHAR(30),
-    default_province_code VARCHAR(10),
+    default_plate VARCHAR(50),
+    default_province_code VARCHAR(20),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 
 -- 2. OTP AUTHENTICATION CODES
--- Temporary one-time security codes for phone login/registration
+-- Temporary one-time security codes for phone/email login/registration
 CREATE TABLE IF NOT EXISTS otps (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    phone VARCHAR(20) NOT NULL,
-    code VARCHAR(6) NOT NULL,
+    phone VARCHAR(255) NOT NULL,
+    code VARCHAR(10) NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     verified BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS trusted_contacts (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     vehicle_id TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
+    phone VARCHAR(255) NOT NULL,
     relationship VARCHAR(50) NOT NULL, -- e.g. 'Spouse', 'Fleet Manager', 'Parent'
     consent_given BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

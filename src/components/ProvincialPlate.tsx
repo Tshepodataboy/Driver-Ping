@@ -7,9 +7,29 @@ export type SAProvinceKey = 'EC' | 'FS' | 'GP' | 'KZN' | 'ZN' | 'LP' | 'L' | 'MP
 interface ProvincialPlateProps {
   provinceCode: string; // Accepts 'EC', 'FS', 'GP', 'KZN', 'ZN', 'LP', 'L', 'MP', 'NC', 'NW', 'WC'
   plateText?: string;
+  imageUrl?: string; // Optional image link to display the plate image directly
   className?: string;
   showCaption?: boolean;
 }
+
+/**
+ * Registry mapping province codes to image links.
+ * Set image URLs here or pass imageUrl prop directly to <ProvincialPlate imageUrl="..." />
+ */
+export const PROVINCE_IMAGE_URLS: Record<string, string> = {
+  EC: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Eastern_Cape_qrxmua.png',
+  FS: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Free_State_l0w82s.png',
+  GP: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Gauteng_tnjxv3.png',
+  KZN: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/KwaZulu-Natal_fgzcvx.png',
+  ZN: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/KwaZulu-Natal_fgzcvx.png',
+  LP: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Limpopo_tu2zv2.png',
+  L: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Limpopo_tu2zv2.png',
+  MP: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Mpumalanga_ovclxz.png',
+  NC: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Northern_Cape_al0quc.png',
+  NW: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/North_West_bqjsyu.png',
+  WC: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Western_Cape_eeg4qm.png',
+  CA: 'https://res.cloudinary.com/dwd83begj/image/upload/v1792822017/Western_Cape_eeg4qm.png',
+};
 
 // Canonical province codes mapping
 export function normalizeProvinceCode(code: string): 'EC' | 'FS' | 'GP' | 'KZN' | 'LP' | 'MP' | 'NC' | 'NW' | 'WC' {
@@ -22,7 +42,7 @@ export function normalizeProvinceCode(code: string): 'EC' | 'FS' | 'GP' | 'KZN' 
   if (upper === 'MP') return 'MP';
   if (upper === 'NC') return 'NC';
   if (upper === 'NW') return 'NW';
-  if (upper === 'WC') return 'WC';
+  if (upper === 'WC' || upper === 'CA') return 'WC';
   return 'WC'; // fallback default
 }
 
@@ -131,7 +151,7 @@ export function formatFullProvincialPlate(regNumber: string, provCode: string): 
 /**
  * Intelligent helper to extract or guess province from a South African registration plate string.
  */
-export function detectProvinceFromPlate(plate: string, fallback = 'WC'): string {
+export function detectProvinceFromPlate(plate: string, fallback = 'GP'): string {
   if (!plate) return fallback;
   const clean = plate.trim().toUpperCase();
   const tokens = clean.split(/[\s-]+/).filter(Boolean);
@@ -219,12 +239,12 @@ function PlateSvgDefs({ idPrefix = 'sa' }: { idPrefix?: string }) {
 }
 
 /**
- * Renders the accurate provincial plate SVG with the exact artwork,
- * typography, filters, and gradients provided by the user.
+ * Renders the provincial plate using the official Cloudinary plate background images.
  */
 export function ProvincialPlate({
   provinceCode,
   plateText,
+  imageUrl,
   className = '',
   showCaption = false,
 }: ProvincialPlateProps) {
@@ -232,11 +252,34 @@ export function ProvincialPlate({
   const info = getProvinceCodeInfo(norm);
   const uid = React.useId().replace(/[:]/g, '');
 
-  // Extract registration portion (ensuring province code cannot be edited or duplicated)
+  const plateImageUrl = imageUrl || PROVINCE_IMAGE_URLS[norm] || PROVINCE_IMAGE_URLS.GP;
+
+  // Extract user registration portion (excluding province code)
   const isExplicitEmpty = plateText !== undefined && plateText.trim().length === 0;
   const userReg = plateText ? stripProvinceCodeFromInput(plateText, norm) : '';
   const displayReg = userReg || (isExplicitEmpty ? '' : info.defaultRegistration);
   const isGhost = isExplicitEmpty;
+  const hasUserText = Boolean(userReg && userReg.trim().length > 0);
+
+  // If a plateImageUrl exists (official Cloudinary images), render it cleanly without text overlaid on the plate
+  if (plateImageUrl) {
+    return (
+      <figure className={`m-0 relative inline-block overflow-hidden rounded-xl border border-gray-300 shadow-sm ${className}`}>
+        <img
+          src={plateImageUrl}
+          alt={`${PROVINCE_NAMES[norm] || norm} License Plate`}
+          className="w-full h-auto block object-cover rounded-xl"
+          loading="lazy"
+        />
+
+        {showCaption && (
+          <figcaption className="mt-1 font-bold text-[11px] text-gray-700">
+            {PROVINCE_NAMES[norm]}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
 
   // Helper to render customized plate text with uneditable province code
   const renderPlateSvg = () => {

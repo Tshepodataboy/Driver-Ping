@@ -30,21 +30,28 @@
 
 
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* Hide scrollbar globally while preserving full scroll functionality */
+html, body, * {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
 }
+
 
 /* ---------- Layout ---------- */
 .wrapper {

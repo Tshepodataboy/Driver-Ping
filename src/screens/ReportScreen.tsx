@@ -17,7 +17,12 @@ import {
   Lock,
   Search,
   X,
+  Upload,
+  Scan,
+  Sparkles,
 } from 'lucide-react';
+
+import { AiPlateScannerModal } from '../components/AiPlateScannerModal.js';
 
 import { SA_PROVINCES, searchProvinces } from '../constants/provinces.js';
 import {
@@ -54,6 +59,21 @@ export function ReportScreen() {
   const [customOtherText, setCustomOtherText] = useState('');
   const [customNote, setCustomNote] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
+
+  const handleScanComplete = (scanned: {
+    plateNumber: string;
+    provinceCode: string;
+    fullPlate: string;
+    photoUrl?: string;
+  }) => {
+    setSelectedProvinceCode(scanned.provinceCode);
+    setPlateNumber(scanned.plateNumber);
+    setPlate(scanned.fullPlate);
+    if (scanned.photoUrl) {
+      setPhotoPreview(scanned.photoUrl);
+    }
+  };
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -382,31 +402,139 @@ export function ReportScreen() {
       {step === 1 && (
         <div>
           <h1 className="text-2xl font-bold font-display text-gray-950">
-            Which vehicle did you notice?
+            Which vehicle did you observe?
           </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Attach a photo to extract plate using AI, or enter registration details below.
+          </p>
 
-          {/* 1. Province Search Engine */}
+          {/* ATTACH PHOTO & AI PLATE EXTRACTION CARD */}
+          <div className="mt-4 p-4 bg-gradient-to-r from-gray-950 via-gray-900 to-[#1A0B12] text-white rounded-2xl border border-rose-500/30 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-28 h-28 bg-rose-500/10 rounded-full blur-xl pointer-events-none" />
+
+            <div className="flex items-center justify-between mb-3 relative z-10">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#B81D39] via-rose-600 to-amber-500 text-white flex items-center justify-center shadow-xs">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-black font-display text-white block leading-tight">
+                    Attach Vehicle Photo
+                  </span>
+                  <span className="text-[10px] text-gray-300 block leading-tight">
+                    Extract registration plate automatically using AI
+                  </span>
+                </div>
+              </div>
+              {photoPreview && (
+                <span className="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold rounded-full flex items-center gap-1">
+                  ✓ Photo Attached
+                </span>
+              )}
+            </div>
+
+            {photoPreview ? (
+              <div className="space-y-3 relative z-10">
+                <div className="relative rounded-xl overflow-hidden border border-white/20 bg-black/40 shadow-xs">
+                  <img
+                    src={photoPreview}
+                    alt="Vehicle preview"
+                    className="w-full h-44 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreview(null)}
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-black/80 hover:bg-black text-white font-bold text-xs rounded-xl cursor-pointer transition-colors flex items-center gap-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Remove Photo</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAiScannerOpen(true)}
+                  className="w-full py-2.5 px-3 bg-gradient-to-r from-[#B81D39] to-rose-600 hover:opacity-95 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Extract Plate with AI Scanner</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2.5 relative z-10">
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Take photo with camera */}
+                  <label className="p-3 bg-white/10 hover:bg-white/15 border border-white/15 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                    <div className="w-8 h-8 rounded-lg bg-[#B81D39] text-white flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                      <Camera className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-white">Take Photo</span>
+                    <span className="text-[9px] text-gray-300">Camera</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Upload from file/gallery */}
+                  <label className="p-3 bg-white/10 hover:bg-white/15 border border-white/15 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                    <div className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-white">Import Photo</span>
+                    <span className="text-[9px] text-gray-300">Gallery</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* AI Scanner Direct Modal Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsAiScannerOpen(true)}
+                  className="w-full py-2.5 px-3 bg-gradient-to-r from-[#B81D39] to-rose-600 hover:opacity-95 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+                >
+                  <Scan className="w-4 h-4 animate-pulse text-amber-300" />
+                  <span>Scan or Extract Plate using AI</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* OR MANUAL PROVINCE SEARCH */}
           <div className="mt-5">
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Search className="w-3.5 h-3.5 text-[#B81D39]" />
-                <span>1. Province Search Engine</span>
+                <span>1. Select Province</span>
               </label>
               {selectedProvince && (
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5">
-                  <span>✓ Selected: {selectedProvince.name} ({selectedProvince.code})</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedProvinceCode(null);
-                      setProvinceSearchQuery('');
-                    }}
-                    className="text-emerald-700/60 hover:text-red-600 transition-colors cursor-pointer text-[10px] ml-0.5 font-black"
-                    title="Clear selected province"
-                  >
-                    ✕
-                  </button>
-                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 shrink-0">
+                    <ProvincialPlate provinceCode={selectedProvince.code} className="w-full drop-shadow-2xs" />
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                    <span>✓ {selectedProvince.name} ({selectedProvince.code})</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProvinceCode(null);
+                        setProvinceSearchQuery('');
+                      }}
+                      className="text-emerald-700/60 hover:text-red-600 transition-colors cursor-pointer text-[10px] ml-0.5 font-black"
+                      title="Clear selected province"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
               )}
             </div>
 
@@ -597,28 +725,59 @@ export function ReportScreen() {
             Choose the category and specific issue.
           </p>
 
-          {/* 3 Category Segmented Tabs */}
-          <div className="mt-4 grid grid-cols-3 gap-1.5 p-1 bg-gray-100 rounded-xl">
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setSelectedIssueCode('');
-                  }}
-                  className={`py-2 px-1 text-[11px] font-semibold rounded-lg transition-all text-center leading-tight ${
-                    isSelected
-                      ? 'bg-white text-gray-950 shadow-xs'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {cat.title}
-                </button>
-              );
-            })}
-          </div>
+          {/* 3 Category Segmented Tabs or Active Category Preset Header */}
+          {reportCategoryPreset ? (
+            <div className="mt-4 p-3.5 bg-red-50/80 border border-red-200/60 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#B81D39] text-white rounded-xl shadow-xs shrink-0">
+                  {selectedCategory === 'driver_behaviour' ? (
+                    <Shield className="w-5 h-5" />
+                  ) : selectedCategory === 'road_violation' ? (
+                    <AlertTriangle className="w-5 h-5" />
+                  ) : (
+                    <Car className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-950 block leading-tight">
+                    {currentCategoryData.title}
+                  </span>
+                  <span className="text-[11px] text-gray-600 mt-0.5 block leading-snug">
+                    {currentCategoryData.subtitle}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReportCategoryPreset(null)}
+                className="text-[11px] font-bold text-[#B81D39] hover:text-[#9E142C] hover:underline shrink-0 bg-white/80 border border-red-200/80 px-2.5 py-1.5 rounded-xl transition-all shadow-2xs cursor-pointer"
+              >
+                All categories
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-3 gap-1.5 p-1 bg-gray-100 rounded-xl">
+              {CATEGORIES.map((cat) => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setSelectedIssueCode('');
+                    }}
+                    className={`py-2 px-1 text-[11px] font-semibold rounded-lg transition-all text-center leading-tight ${
+                      isSelected
+                        ? 'bg-white text-gray-950 shadow-xs'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {cat.title}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Issues List with Radio selection */}
           <div className="mt-4 space-y-2 max-h-[46vh] overflow-y-auto pr-1">
@@ -736,40 +895,6 @@ export function ReportScreen() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Add Photo (Optional)
-              </label>
-              {photoPreview ? (
-                <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100">
-                  <img
-                    src={photoPreview}
-                    alt="Preview"
-                    className="w-full h-40 object-cover"
-                  />
-                  <button
-                    onClick={() => setPhotoPreview(null)}
-                    className="absolute top-2 right-2 px-2.5 py-1 bg-black/70 text-white rounded-lg text-xs"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <label className="w-full h-24 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                  <Camera className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-xs font-medium text-gray-600">
-                    Take or select photo
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-
             {/* Mandatory Neutral Language Reminder */}
             <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl text-xs text-blue-900 leading-relaxed">
               <span className="font-semibold block mb-0.5">How this appears to the driver:</span>
@@ -845,6 +970,13 @@ export function ReportScreen() {
         </div>
       )}
       </div>
+
+      {/* AI Plate Camera Scanner Modal */}
+      <AiPlateScannerModal
+        isOpen={isAiScannerOpen}
+        onClose={() => setIsAiScannerOpen(false)}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   );
 }

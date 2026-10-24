@@ -314,15 +314,20 @@ export function HomeScreen() {
                       {alert.issueTitle}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="w-24 shrink-0 drop-shadow-2xs">
+                      <div className="w-28 shrink-0 drop-shadow-xs">
                         <ProvincialPlate
                           provinceCode={detectProvinceFromPlate(alert.plateDisplay)}
                           plateText={alert.plateDisplay}
                         />
                       </div>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {getRelativeTime(alert.createdAt)}
-                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-mono font-bold text-[11px] text-gray-900 leading-tight truncate">
+                          {alert.plateDisplay}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium leading-tight">
+                          {getRelativeTime(alert.createdAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -335,12 +340,12 @@ export function HomeScreen() {
                   )}
                   {alert.status === 'received' && (
                     <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                      Received
+                      Unread
                     </span>
                   )}
                   {alert.status === 'resolved' && (
                     <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-                      Resolved
+                      Read
                     </span>
                   )}
                   <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -364,11 +369,16 @@ export function HomeScreen() {
             </button>
 
             <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="w-36 max-w-full drop-shadow-xs">
-                <ProvincialPlate
-                  provinceCode={detectProvinceFromPlate(selectedAlert.plateDisplay)}
-                  plateText={selectedAlert.plateDisplay}
-                />
+              <div>
+                <div className="w-40 max-w-full drop-shadow-xs">
+                  <ProvincialPlate
+                    provinceCode={detectProvinceFromPlate(selectedAlert.plateDisplay)}
+                    plateText={selectedAlert.plateDisplay}
+                  />
+                </div>
+                <div className="font-mono font-black text-xs text-gray-900 mt-1">
+                  {selectedAlert.plateDisplay}
+                </div>
               </div>
               <span className="text-xs text-gray-400 font-medium">
                 {getRelativeTime(selectedAlert.createdAt)}
@@ -406,7 +416,7 @@ export function HomeScreen() {
                   className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-sm flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Mark as Resolved</span>
+                  <span>Mark as Read</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-2">

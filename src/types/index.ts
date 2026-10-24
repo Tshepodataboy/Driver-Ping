@@ -5,6 +5,8 @@ export interface User {
   id: string;
   phone: string;
   fullName: string;
+  firstName?: string;
+  surname?: string;
   role: UserRole;
   plan: PlanTier;
   smsOptIn: boolean;

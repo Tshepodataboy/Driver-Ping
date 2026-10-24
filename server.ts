@@ -3,6 +3,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { apiRouter } from './src/server/api.js';
 import { db } from './src/server/db.js';
 
@@ -10,15 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  // Ensure database initialization runs and fails fast in production if unavailable
+  // Ensure database initialization runs smoothly without hard crashes
   try {
     await db.waitForInit();
   } catch (err: any) {
-    console.error('❌ [Server Startup] Failed to connect to database:', err.message);
-    if (process.env.NODE_ENV === 'production') {
-      console.error('FATAL: Production server cannot start without an active PostgreSQL database.');
-      process.exit(1);
-    }
+    console.warn('⚠️ [Server Startup] Database initialization warning:', err?.message || err);
   }
 
   const app = express();
@@ -26,6 +23,11 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // Immediate health check for Cloud Run and container orchestrator probes
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
+  });
 
   // Mount API endpoints
   app.use('/api', apiRouter);
@@ -40,10 +42,13 @@ async function startServer() {
     next(err);
   });
 
-  if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+  const distPath = path.resolve(__dirname, 'dist');
+  const distIndex = path.resolve(distPath, 'index.html');
+
+  if (process.env.NODE_ENV === 'production' && fs.existsSync(distIndex)) {
+    app.use(express.static(distPath));
     app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      res.sendFile(distIndex);
     });
   } else {
     const vite = await createViteServer({

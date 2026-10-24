@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp, TabKey } from '../context/AppContext.js';
-import { Home, Car, Bell, User } from 'lucide-react';
+import { Home, Car, User } from 'lucide-react';
 
 interface NavItem {
   key: TabKey;
@@ -11,16 +11,15 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { key: 'home', label: 'Home', icon: Home },
   { key: 'vehicles', label: 'Vehicles', icon: Car },
-  { key: 'alerts', label: 'Alerts', icon: Bell },
   { key: 'profile', label: 'Profile', icon: User },
 ];
 
 export function BottomNav() {
-  const { activeTab, setActiveTab, unreadAlertsCount } = useApp();
+  const { activeTab, setActiveTab } = useApp();
 
   return (
     <nav className="fixed bottom-3 inset-x-0 z-40 flex justify-center px-3 pointer-events-none safe-area-pb">
-      <div className="pointer-events-auto w-full max-w-[390px] bg-white/95 backdrop-blur-2xl border border-white/60 shadow-[0_14px_40px_rgba(0,0,0,0.38)] rounded-[26px] p-1.5 flex items-center justify-between gap-1 transition-all">
+      <div className="pointer-events-auto w-full max-w-[360px] bg-white/95 backdrop-blur-2xl border border-white/60 shadow-[0_14px_40px_rgba(0,0,0,0.38)] rounded-[26px] p-1.5 flex items-center justify-between gap-1 transition-all">
         {NAV_ITEMS.map((item) => {
           const isActive = activeTab === item.key;
           const Icon = item.icon;
@@ -44,17 +43,6 @@ export function BottomNav() {
                     isActive ? 'stroke-[2.4]' : 'stroke-[2]'
                   }`}
                 />
-                {item.key === 'alerts' && unreadAlertsCount > 0 && (
-                  <span
-                    className={`absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border shadow-xs transition-colors ${
-                      isActive
-                        ? 'bg-white text-[#B81D39] border-white'
-                        : 'bg-[#B81D39] text-white border-white animate-pulse'
-                    }`}
-                  >
-                    {unreadAlertsCount > 9 ? '9+' : unreadAlertsCount}
-                  </span>
-                )}
               </div>
               <span
                 className={`text-[10px] tracking-tight mt-0.5 leading-none ${

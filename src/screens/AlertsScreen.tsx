@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Check,
   EyeOff,
+  Camera,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 import { ProvincialPlate, detectProvinceFromPlate } from '../components/ProvincialPlate.js';
@@ -23,15 +25,15 @@ import { ProvincialPlate, detectProvinceFromPlate } from '../components/Provinci
 export function AlertsScreen() {
   const { alerts, takeAlertAction, refreshAlerts } = useApp();
 
-  const [filter, setFilter] = useState<'all' | 'action_needed' | 'resolved'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null);
   const [actionType, setActionType] = useState<'resolve' | 'dispute' | 'flag_abuse' | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredAlerts = alerts.filter((a) => {
-    if (filter === 'action_needed') return a.status === 'received' || a.status === 'needs_review';
-    if (filter === 'resolved') return a.status === 'resolved' || a.status === 'dismissed';
+    if (filter === 'unread') return a.status === 'received' || a.status === 'needs_review';
+    if (filter === 'read') return a.status === 'resolved' || a.status === 'dismissed';
     return true;
   });
 
@@ -87,24 +89,24 @@ export function AlertsScreen() {
             All ({alerts.length})
           </button>
           <button
-            onClick={() => setFilter('action_needed')}
+            onClick={() => setFilter('unread')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all ${
-              filter === 'action_needed'
+              filter === 'unread'
                 ? 'bg-white text-gray-950 shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            Needs Action ({alerts.filter((a) => a.status === 'received' || a.status === 'needs_review').length})
+            Unread ({alerts.filter((a) => a.status === 'received' || a.status === 'needs_review').length})
           </button>
           <button
-            onClick={() => setFilter('resolved')}
+            onClick={() => setFilter('read')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all ${
-              filter === 'resolved'
+              filter === 'read'
                 ? 'bg-white text-gray-950 shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            Resolved ({alerts.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length})
+            Read ({alerts.filter((a) => a.status === 'resolved' || a.status === 'dismissed').length})
           </button>
         </div>
 
@@ -120,79 +122,103 @@ export function AlertsScreen() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredAlerts.map((alert) => (
-              <button
-                key={alert.id}
-                onClick={() => {
-                  setSelectedAlert(alert);
-                  setActionType(null);
-                  setActionNote('');
-                }}
-                className="w-full bg-gray-50/70 hover:bg-gray-100/80 p-4 rounded-2xl border border-gray-200/60 flex items-start justify-between text-left shadow-xs transition-all active:scale-[0.99] focus:outline-none"
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-red-50 text-[#B81D39] flex items-center justify-center shrink-0 mt-0.5">
-                    {alert.category === 'vehicle_condition' ? (
-                      <Lightbulb className="w-5 h-5" />
-                    ) : (
-                      <Car className="w-5 h-5" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-24 shrink-0 drop-shadow-2xs">
-                        <ProvincialPlate
-                          provinceCode={detectProvinceFromPlate(alert.plateDisplay)}
-                          plateText={alert.plateDisplay}
-                        />
+            {filteredAlerts.map((alert) => {
+              const photo = alert.photoUrl || (alert as any).photo_url;
+              return (
+                <button
+                  key={alert.id}
+                  onClick={() => {
+                    setSelectedAlert(alert);
+                    setActionType(null);
+                    setActionNote('');
+                  }}
+                  className="w-full bg-gray-50/70 hover:bg-gray-100/80 p-4 rounded-2xl border border-gray-200/60 flex flex-col gap-2 text-left shadow-xs transition-all active:scale-[0.99] focus:outline-none"
+                >
+                  <div className="flex items-start justify-between w-full">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-red-50 text-[#B81D39] flex items-center justify-center shrink-0 mt-0.5">
+                        {alert.category === 'vehicle_condition' ? (
+                          <Lightbulb className="w-5 h-5" />
+                        ) : (
+                          <Car className="w-5 h-5" />
+                        )}
                       </div>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {getRelativeTime(alert.createdAt)}
-                      </span>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-28 shrink-0 drop-shadow-xs">
+                            <ProvincialPlate
+                              provinceCode={detectProvinceFromPlate(alert.plateDisplay)}
+                              plateText={alert.plateDisplay}
+                            />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-mono font-bold text-[11px] text-gray-900 leading-tight truncate">
+                              {alert.plateDisplay}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-medium leading-tight">
+                              {getRelativeTime(alert.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <h2 className="text-sm font-bold text-gray-950 mt-1 truncate">
+                          {alert.issueTitle}
+                        </h2>
+
+                        {/* Neutral language preview */}
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 italic">
+                          {alert.customNote ? `"${alert.customNote}"` : 'Please check when safe.'}
+                        </p>
+                      </div>
                     </div>
 
-                    <h2 className="text-sm font-bold text-gray-950 mt-1 truncate">
-                      {alert.issueTitle}
-                    </h2>
-
-                    {/* Neutral language preview */}
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 italic">
-                      {alert.customNote ? `"${alert.customNote}"` : 'Please check when safe.'}
-                    </p>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      {alert.status === 'needs_review' && (
+                        <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
+                          Needs review
+                        </span>
+                      )}
+                      {alert.status === 'received' && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Unread
+                        </span>
+                      )}
+                      {alert.status === 'resolved' && (
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                          Read
+                        </span>
+                      )}
+                      {alert.status === 'disputed' && (
+                        <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                          Disputed
+                        </span>
+                      )}
+                      {alert.status === 'flagged_abuse' && (
+                        <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                          Flagged
+                        </span>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                  {alert.status === 'needs_review' && (
-                    <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
-                      Needs review
-                    </span>
+                  {/* Photo attachment preview if reporter sent a photo */}
+                  {photo && (
+                    <div className="mt-1 relative rounded-xl overflow-hidden border border-gray-200 bg-gray-900/5 group/photo w-full">
+                      <img
+                        src={photo}
+                        alt="Observation attachment preview"
+                        className="w-full h-32 object-cover transition-transform duration-300 group-hover/photo:scale-[1.02]"
+                      />
+                      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 backdrop-blur-md rounded-lg text-[10px] font-bold text-white flex items-center gap-1 shadow-xs border border-white/10">
+                        <Camera className="w-3 h-3 text-rose-400" /> Photo Attached
+                      </div>
+                    </div>
                   )}
-                  {alert.status === 'received' && (
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                      Received
-                    </span>
-                  )}
-                  {alert.status === 'resolved' && (
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                      Resolved
-                    </span>
-                  )}
-                  {alert.status === 'disputed' && (
-                    <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
-                      Disputed
-                    </span>
-                  )}
-                  {alert.status === 'flagged_abuse' && (
-                    <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
-                      Flagged
-                    </span>
-                  )}
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -209,11 +235,16 @@ export function AlertsScreen() {
             </button>
 
             <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="w-36 max-w-full drop-shadow-xs">
-                <ProvincialPlate
-                  provinceCode={detectProvinceFromPlate(selectedAlert.plateDisplay)}
-                  plateText={selectedAlert.plateDisplay}
-                />
+              <div>
+                <div className="w-40 max-w-full drop-shadow-xs">
+                  <ProvincialPlate
+                    provinceCode={detectProvinceFromPlate(selectedAlert.plateDisplay)}
+                    plateText={selectedAlert.plateDisplay}
+                  />
+                </div>
+                <div className="font-mono font-black text-xs text-gray-900 mt-1">
+                  {selectedAlert.plateDisplay}
+                </div>
               </div>
               <span className="text-xs text-gray-400 font-medium">
                 {getRelativeTime(selectedAlert.createdAt)}
@@ -237,15 +268,36 @@ export function AlertsScreen() {
               </div>
             )}
 
-            {selectedAlert.photoUrl && (
-              <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200">
-                <img
-                  src={selectedAlert.photoUrl}
-                  alt="Observation attachment"
-                  className="w-full h-36 object-cover"
-                />
-              </div>
-            )}
+            {(() => {
+              const modalPhoto = selectedAlert.photoUrl || (selectedAlert as any).photo_url;
+              if (!modalPhoto) return null;
+              return (
+                <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200/90 bg-gray-900/5 shadow-xs">
+                  <div className="px-3 py-1.5 bg-gray-900 text-white text-[10px] font-bold tracking-wider uppercase flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-rose-400" /> Reporter Attached Photo
+                    </span>
+                    <span className="text-gray-400 font-normal text-[9px]">Observation Media</span>
+                  </div>
+                  <div className="relative">
+                    <img
+                      src={modalPhoto}
+                      alt="Observation attachment"
+                      className="w-full max-h-64 object-cover"
+                    />
+                    <a
+                      href={modalPhoto}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/75 hover:bg-black text-white text-[10px] font-bold rounded-lg backdrop-blur-xs flex items-center gap-1 shadow-sm transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ImageIcon className="w-3 h-3" /> View Full
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Recorded Delivery Status (Rule 10) */}
             <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-2xl text-xs text-blue-900 flex items-start gap-2">
@@ -287,7 +339,7 @@ export function AlertsScreen() {
                   className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-xs flex items-center justify-center gap-2 transition-transform active:scale-95"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Mark as Resolved</span>
+                  <span>Mark as Read</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-2">

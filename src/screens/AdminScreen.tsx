@@ -17,6 +17,7 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react';
+import { ProvincialPlate, detectProvinceFromPlate } from '../components/ProvincialPlate.js';
 
 export function AdminScreen() {
   const {
@@ -224,10 +225,16 @@ export function AdminScreen() {
                   className="bg-gray-50/70 rounded-2xl p-4 border border-gray-100 shadow-xs space-y-3"
                 >
                   <div className="flex items-start justify-between">
-                    <div>
-                      <span className="font-mono font-bold bg-[#FFDD00] text-black px-2 py-0.5 rounded text-xs">
-                        {verif.plateDisplay}
-                      </span>
+                    <div className="space-y-1">
+                      <div className="w-28 drop-shadow-xs">
+                        <ProvincialPlate
+                          provinceCode={detectProvinceFromPlate(verif.plateDisplay || '')}
+                          plateText={verif.plateDisplay || ''}
+                        />
+                      </div>
+                      <div className="font-mono font-black text-[11px] text-gray-900">
+                        {verif.plateDisplay || 'UNKNOWN PLATE'}
+                      </div>
                       <h2 className="text-xs font-bold text-gray-900 mt-1">
                         {verif.userName} ({verif.userPhone})
                       </h2>
@@ -309,10 +316,16 @@ export function AdminScreen() {
                   className="bg-gray-50/70 rounded-2xl p-4 border border-gray-100 shadow-xs space-y-3"
                 >
                   <div className="flex items-start justify-between">
-                    <div>
-                      <span className="font-mono font-bold bg-[#FFDD00] text-black px-2 py-0.5 rounded text-xs">
+                    <div className="space-y-1">
+                      <div className="w-28 drop-shadow-xs">
+                        <ProvincialPlate
+                          provinceCode={detectProvinceFromPlate(item.plateDisplay)}
+                          plateText={item.plateDisplay}
+                        />
+                      </div>
+                      <div className="font-mono font-black text-[11px] text-gray-900">
                         {item.plateDisplay}
-                      </span>
+                      </div>
                       <h2 className="text-xs font-bold text-gray-900 mt-1">
                         {item.issueTitle}
                       </h2>

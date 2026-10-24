@@ -15,11 +15,12 @@ import {
   Sliders,
   Star,
   Car,
+  LogOut,
 } from 'lucide-react';
 import { ProvincialPlate, detectProvinceFromPlate } from '../components/ProvincialPlate.js';
 
 export function ProfileScreen() {
-  const { user, vehicles, setDefaultVehicle, updateUserPreferences, setActiveTab, switchAccount } = useApp();
+  const { user, vehicles, setDefaultVehicle, updateUserPreferences, setActiveTab, switchAccount, signOut } = useApp();
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
@@ -42,36 +43,6 @@ export function ProfileScreen() {
     );
   }
 
-  const handleToggleSms = async () => {
-    setIsUpdating(true);
-    const newOptIn = !user.smsOptIn;
-    await updateUserPreferences({ smsOptIn: newOptIn });
-    setIsUpdating(false);
-    setSuccessNotice(newOptIn ? 'SMS alerts enabled with spending cap' : 'SMS alerts disabled');
-    setTimeout(() => setSuccessNotice(null), 3000);
-  };
-
-  const handleSetSpendingCap = async (capPence: number) => {
-    setIsUpdating(true);
-    await updateUserPreferences({ smsMonthlyCapPence: capPence });
-    setIsUpdating(false);
-    setSuccessNotice(`Monthly SMS spending limit updated to R${(capPence / 10).toFixed(0)}`);
-    setTimeout(() => setSuccessNotice(null), 3000);
-  };
-
-  const handlePlanToggle = async () => {
-    setIsUpdating(true);
-    const nextPlan = user.plan === 'free' ? 'paid_owner' : 'free';
-    await updateUserPreferences({ plan: nextPlan });
-    setIsUpdating(false);
-    setSuccessNotice(
-      nextPlan === 'paid_owner'
-        ? 'Switched to Paid Owner Plan. You can now submit ownership logbook documents!'
-        : 'Switched to Free Plan'
-    );
-    setTimeout(() => setSuccessNotice(null), 4000);
-  };
-
   const handleSelectDefaultVehicle = async (vehicleId: string, plateDisplay: string) => {
     setIsUpdating(true);
     const res = await setDefaultVehicle(vehicleId);
@@ -81,13 +52,6 @@ export function ProfileScreen() {
       setTimeout(() => setSuccessNotice(null), 3500);
     }
   };
-
-  const spendRands = (user.smsCurrentSpendPence / 10).toFixed(1);
-  const capRands = (user.smsMonthlyCapPence / 10).toFixed(0);
-  const spendPercent = Math.min(
-    100,
-    Math.round((user.smsCurrentSpendPence / user.smsMonthlyCapPence) * 100)
-  );
 
   return (
     <div className="pb-28 pt-3 px-3 max-w-[420px] mx-auto text-gray-900">
@@ -116,20 +80,39 @@ export function ProfileScreen() {
         )}
 
         {/* User Card */}
-        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100 shadow-xs">
+        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100 shadow-xs space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#0D1829] text-white flex items-center justify-center font-black text-lg font-display">
+            <div className="w-12 h-12 rounded-2xl bg-[#0D1829] text-white flex items-center justify-center font-black text-lg font-display shrink-0">
               {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'D'}
             </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-950 font-display">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold text-gray-950 font-display truncate">
                 {user.fullName || 'Driver'}
               </h2>
               <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                <span className="font-mono">{user.phone}</span>
-                <span>·</span>
                 <span className="capitalize font-semibold text-[#B81D39]">{user.role}</span>
+                <span>·</span>
+                <span className="text-gray-600 font-medium">Driver Ping Member</span>
               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200/60">
+            <div className="p-2.5 bg-white rounded-xl border border-gray-100">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                User ID
+              </span>
+              <span className="font-mono text-xs font-black text-gray-900 select-all">
+                {user.id}
+              </span>
+            </div>
+            <div className="p-2.5 bg-white rounded-xl border border-gray-100">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                Call / Mobile Number
+              </span>
+              <span className="font-mono text-xs font-black text-emerald-800 select-all">
+                {user.phone || 'Not set'}
+              </span>
             </div>
           </div>
         </div>
@@ -171,24 +154,27 @@ export function ProfileScreen() {
               {(() => {
                 const defaultVeh = vehicles.find((v) => v.isDefault) || vehicles[0];
                 return (
-                  <div className="p-3 bg-white rounded-xl border-2 border-amber-300/80 shadow-2xs flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-28 shrink-0 drop-shadow-2xs">
+                  <div className="p-3 bg-white rounded-xl border-2 border-amber-300/80 shadow-2xs flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-32 shrink-0 drop-shadow-xs">
                         <ProvincialPlate
                           provinceCode={detectProvinceFromPlate(defaultVeh.plateDisplay)}
                           plateText={defaultVeh.plateDisplay}
                         />
                       </div>
-                      <div>
-                        <div className="text-xs font-bold text-gray-900">
+                      <div className="min-w-0">
+                        <div className="font-mono font-black text-xs text-gray-950 truncate">
+                          {defaultVeh.plateDisplay}
+                        </div>
+                        <div className="text-xs font-bold text-gray-700 truncate">
                           {defaultVeh.make} {defaultVeh.model}
                         </div>
-                        <div className="text-[10px] text-gray-400">
+                        <div className="text-[10px] text-gray-400 truncate">
                           {defaultVeh.color} · {defaultVeh.isVerifiedOwner ? 'Verified Owner' : 'Registered Driver'}
                         </div>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                       <span>✓ Current</span>
                     </span>
                   </div>
@@ -218,15 +204,20 @@ export function ProfileScreen() {
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-20 shrink-0 drop-shadow-2xs">
+                            <div className="w-24 shrink-0 drop-shadow-xs">
                               <ProvincialPlate
                                 provinceCode={detectProvinceFromPlate(v.plateDisplay)}
                                 plateText={v.plateDisplay}
                               />
                             </div>
-                            <span className="text-[11px] text-gray-600 truncate max-w-[140px]">
-                              {v.make} {v.model}
-                            </span>
+                            <div className="min-w-0">
+                              <div className="font-mono font-bold text-[11px] text-gray-900 truncate">
+                                {v.plateDisplay}
+                              </div>
+                              <span className="text-[10px] text-gray-500 truncate block">
+                                {v.make} {v.model}
+                              </span>
+                            </div>
                           </div>
                           <span className="text-[10px] font-bold shrink-0">
                             {isCurrentDefault ? (
@@ -241,126 +232,6 @@ export function ProfileScreen() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-        </div>
-
-        {/* PLAN SETTINGS (Rule 2, 4) */}
-        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-[#B81D39]" />
-              <span className="text-sm font-bold text-gray-950">
-                Subscription Tier
-              </span>
-            </div>
-            <span
-              className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                user.plan === 'paid_owner'
-                  ? 'bg-red-100 text-[#B81D39]'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              {user.plan === 'paid_owner' ? 'Owner Plan (R49/mo)' : 'Free Driver Plan'}
-            </span>
-          </div>
-
-          <p className="text-xs text-gray-600 leading-relaxed">
-            {user.plan === 'paid_owner'
-              ? 'Your plan allows you to submit official vehicle registration logbook documents for admin verification, manage secondary drivers, and designate trusted contacts.'
-              : 'Free users can send unlimited reports and register as vehicle drivers. To submit proof of ownership for admin verification, upgrade to the Owner Plan.'}
-          </p>
-
-          {/* Rule 4 Requirement */}
-          <div className="mt-3 p-3 bg-white rounded-xl border border-gray-200/70 text-[11px] text-gray-600 italic">
-            <strong>Rule 4 Protection:</strong> Paying for the Owner Plan never automatically makes someone the vehicle owner. Ownership is only confirmed after human admin verification of official documents.
-          </div>
-
-          <div className="mt-3">
-            <button
-              onClick={handlePlanToggle}
-              disabled={isUpdating}
-              className={`w-full py-3 px-3 rounded-2xl text-xs font-bold transition-all shadow-xs ${
-                user.plan === 'free'
-                  ? 'bg-[#B81D39] text-white hover:bg-[#9E142C]'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {user.plan === 'free'
-                ? 'Upgrade to Paid Owner Plan (R49/mo)'
-                : 'Switch to Free Driver Plan'}
-            </button>
-          </div>
-        </div>
-
-        {/* SMS NOTIFICATIONS & SPENDING LIMIT (Rule 7) */}
-        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-[#B81D39]" />
-              <span className="text-sm font-bold text-gray-950">
-                Optional SMS Alerts
-              </span>
-            </div>
-            <button
-              onClick={handleToggleSms}
-              disabled={isUpdating}
-              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                user.smsOptIn ? 'bg-[#B81D39]' : 'bg-gray-300'
-              }`}
-              aria-label="Toggle SMS alerts"
-            >
-              <div
-                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                  user.smsOptIn ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-500 leading-relaxed">
-            Alerts always appear in the app first. SMS delivery is strictly optional (R1.50 per SMS) with an automated hard spending cap to ensure costs never run out of control.
-          </p>
-
-          {user.smsOptIn && (
-            <div className="mt-3 pt-3 border-t border-gray-200/60 space-y-3">
-              {/* Live Spend Tracker */}
-              <div>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-medium text-gray-700">Monthly Usage:</span>
-                  <span className="font-bold text-gray-950">
-                    R{spendRands} of R{capRands} limit
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-[#B81D39] h-full transition-all"
-                    style={{ width: `${spendPercent}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Spending Cap Selector */}
-              <div>
-                <span className="text-xs font-semibold text-gray-700 block mb-1.5">
-                  Set Monthly Spending Limit:
-                </span>
-                <div className="grid grid-cols-3 gap-2">
-                  {[200, 500, 1000].map((cap) => (
-                    <button
-                      key={cap}
-                      onClick={() => handleSetSpendingCap(cap)}
-                      className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all ${
-                        user.smsMonthlyCapPence === cap
-                          ? 'border-[#B81D39] bg-red-50 text-[#B81D39]'
-                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      R{(cap / 10).toFixed(0)} Max
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -423,6 +294,17 @@ export function ProfileScreen() {
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
+        </div>
+
+        {/* SIGN OUT ACTION */}
+        <div className="pt-2">
+          <button
+            onClick={signOut}
+            className="w-full py-3.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-2xl border border-red-200 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4 text-red-600" />
+            <span>Sign Out of Account</span>
+          </button>
         </div>
       </div>
     </div>
